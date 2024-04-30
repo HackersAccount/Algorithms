@@ -1,86 +1,156 @@
-from typing import List, Optional
+# Searching a key on a B-tree in Python
 
 
-class Node:
-    """
-    Node class representing a node in  a Btree.
-
-    Attributes:
-    - keys (List[int]): A list of keys stored in the node.
-    - children (List[Node]): A list of child nodes.
-    - leaf (bool): A flag  indicating whether the node is a leaf node.
-    """
-
-    def __init__(self, leaf: bool = True) -> None:
+# Create a node
+class BTreeNode:
+    def __init__(self, leaf=False):
         """
-        Initializes a new Node instance.
-
+        Initializes a B-tree node.
 
         Args:
-        - leaf (bool): Indicates whether the node is a leaf node (default: True)
+        - leaf (bool): Indicates whether the node is a leaf node (default: False).
         """
-        self.keys: List[int] = []
-        self.children: List[Node] = []
-        self.leaf: bool = leaf
+        self.leaf = leaf
+        self.keys = []  # List to store keys
+        self.child = []  # List to store child nodes
 
-    def insert(self, key: int):
+
+# Tree
+class BTree:
+    def __init__(self, t):
         """
-        Inserts a key into the node  or its child nodes recursively.
+        Initializes a B-tree.
 
         Args:
-        - key (int): The key to insert.
+        - t (int): Minimum degree of the B-tree.
         """
-        if self.leaf:
-            self._insert_leaf(key)
+        self.root = BTreeNode(True)  # Create a root node with leaf set to True
+        self.t = t
+
+    # Insert node
+    def insert(self, k):
+        """
+        Inserts a key into the B-tree.
+
+        Args:
+        - k (tuple): Key to be inserted as a tuple (key, value).
+        """
+        root = self.root
+        if len(root.keys) == (2 * self.t) - 1:
+            temp = BTreeNode()
+            self.root = temp
+            temp.child.insert(0, root)
+            self.split_child(temp, 0)
+            self.insert_non_full(temp, k)
         else:
-            index: int = len(self.keys - 1)
-            while index >= 0 and key < self.keys[index]:
-                index -= 1
-            index += 1
-            if len(self.children[index].keys) == 3:
-                self._split_child(index)
-                if key > self.keys[index]:
-                    index += 1
-            self.children[index].insert(key)
+            self.insert_non_full(root, k)
 
-    def _insert_leaf(self, key: int) -> None:
+    # Insert nonfull
+    def insert_non_full(self, x, k):
         """
-        Inserts a key into the leaf node.
+        Inserts a key into a non-full node in the B-tree.
 
         Args:
-        - key (int): The key to insert.
+        - x (BTreeNode): Node in which the key is to be inserted.
+        - k (tuple): Key to be inserted as a tuple (key, value).
         """
-        self.keys.append(key)
-        self.keys.sort()
+        i = len(x.keys) - 1
+        if x.leaf:
+            x.keys.append((None, None))
+            while i >= 0 and k[0] < x.keys[i][0]:
+                x.keys[i + 1] = x.keys[i]
+                i -= 1
+            x.keys[i + 1] = k
+        else:
+            while i >= 0 and k[0] < x.keys[i][0]:
+                i -= 1
+            i += 1
+            if len(x.child[i].keys) == (2 * self.t) - 1:
+                self.split_child(x, i)
+                if k[0] > x.keys[i][0]:
+                    i += 1
+            self.insert_non_full(x.child[i], k)
 
-    def _split_child(self, index: int) -> None:
+    # Split the child
+    def split_child(self, x, i):
         """
-        Splits a child node when it is full.
+        Splits a child node of a B-tree node.
 
         Args:
-        - index (int): The index of the child node to split.
+        - x (BTreeNode): Parent node.
+        - i (int): Index of the child node to be split.
         """
-        new_child = Node(leaf=self.children[index].leaf)
-        split_index = len(self.children[index].keys) // 2
-        median = self.children[index].keys[split_index]
+        t = self.t
+        y = x.child[i]
+        z = BTreeNode(y.leaf)
+        x.child.insert(i + 1, z)
+        x.keys.insert(i, y.keys[t - 1])
+        z.keys = y.keys[t : (2 * t) - 1]
+        y.keys = y.keys[0 : t - 1]
+        if not y.leaf:
+            z.child = y.child[t : 2 * t]
+            y.child = y.child[0 : t - 1]
 
-        new_child.keys = self.children[index].keys[split_index + 1 :]
-        self.children[index].keys = self.children[index].keys[:split_index]
-
-        if not self.children[index].leaf:
-            new_child.children = self.children[index].children[split_index + 1 :]
-            self.children[index].children = self.children[index].children[
-                : split_index + 1
-            ]
-
-        self.keys.insert(index, median)
-        self.children.insert(index + 1, new_child)
-
-    def __str__(self) -> str:
+    # Print the tree
+    def print_tree(self, x, l=0):
         """
-        Returns a string representation of the node.
+        Prints the B-tree.
+
+        Args:
+        - x (BTreeNode): Node to be printed.
+        - l (int): Level of the node in the tree (default: 0).
+        """
+        print("Level ", l, " ", len(x.keys), end=":")
+        for i in x.keys:
+            print(i, end=" ")
+        print()
+        l += 1
+        if len(x.child) > 0:
+            for i in x.child:
+                self.print_tree(i, l)
+
+    # Search key in the tree
+    def search_key(self, k, x=None):
+        """
+        Searches for a key in the B-tree.
+
+        Args:
+        - k (int): Key to search for.
+        - x (BTreeNode): Node to start the search from (default: None).
 
         Returns:
-        - str: A string representation of the node.
+        - tuple: A tuple containing the node and index of the key if found, None otherwise.
         """
-        return f"{self.keys}"
+        if x is not None:
+            i = 0
+            while i < len(x.keys) and k > x.keys[i][0]:
+                i += 1
+            if i < len(x.keys) and k == x.keys[i][0]:
+                return (x, i)
+            elif x.leaf:
+                return None
+            else:
+                return self.search_key(k, x.child[i])
+        else:
+            return self.search_key(k, self.root)
+
+
+def main():
+    B = BTree(3)  # Create a B-tree with minimum degree 3
+
+    # Insert keys into the B-tree
+    for i in range(10):
+        B.insert((i, 2 * i))
+
+    # Print the B-tree
+    B.print_tree(B.root)
+
+    # Search for a key in the B-tree
+    if B.search_key(8) is not None:
+        print("\nFound")
+    else:
+        print("\nNot Found")
+
+
+if __name__ == "__main__":
+    main()
