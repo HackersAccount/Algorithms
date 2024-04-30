@@ -1,5 +1,6 @@
 from BTree import BTree
 
+
 def main():
     B = BTree(3)  # Create a B-tree with minimum degree 3
 
