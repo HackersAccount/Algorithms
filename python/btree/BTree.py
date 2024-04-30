@@ -1,21 +1,7 @@
-# Searching a key on a B-tree in Python
-
-
-# Create a node
-class BTreeNode:
-    def __init__(self, leaf=False):
-        """
-        Initializes a B-tree node.
-
-        Args:
-        - leaf (bool): Indicates whether the node is a leaf node (default: False).
-        """
-        self.leaf = leaf
-        self.keys = []  # List to store keys
-        self.child = []  # List to store child nodes
-
-
 # Tree
+from BTreeNode import BTreeNode
+
+
 class BTree:
     def __init__(self, t):
         """
@@ -133,24 +119,3 @@ class BTree:
                 return self.search_key(k, x.child[i])
         else:
             return self.search_key(k, self.root)
-
-
-def main():
-    B = BTree(3)  # Create a B-tree with minimum degree 3
-
-    # Insert keys into the B-tree
-    for i in range(10):
-        B.insert((i, 2 * i))
-
-    # Print the B-tree
-    B.print_tree(B.root)
-
-    # Search for a key in the B-tree
-    if B.search_key(8) is not None:
-        print("\nFound")
-    else:
-        print("\nNot Found")
-
-
-if __name__ == "__main__":
-    main()
